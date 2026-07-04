@@ -1,6 +1,8 @@
 import { useState,useEffect } from 'react'
 import { Link,useNavigate,useLocation  } from 'react-router-dom'
 import { Menu , X , Building2, LogIn , UserPlus , Home, Search, LayoutDashboard } from 'lucide-react'
+import { getUser, logout } from '../../utils/auth.js'
+
 
 function Navbar(){
     const navigate = useNavigate()
@@ -13,7 +15,9 @@ function Navbar(){
     }, [location.pathname])
 
     // We'll replace this with real auth later
-    const user = null
+    // const user = null
+    const user = getUser()
+
 
     const navLinks = [
         { label: 'Home', to: '/', icon: <Home size={16} /> },
@@ -55,12 +59,36 @@ function Navbar(){
         
             {/* Desktop Auth Buttons */}
             <div className="hidden md:flex items-center gap-3">
-                {user ? (
-                    <button onClick={() => navigate('/my-bookings')}
-                    className="text-sm font-medium text-teal-700 hover:underline">
-                       My Bookings
+            {user ? (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600">
+                    Hi, {user.name.split(' ')[0]}
+                  </span>
+                  {user.role === 'owner' && (
+                    <button
+                      onClick={() => navigate('/owner/dashboard')}
+                      className="text-sm text-teal-700 hover:underline"
+                    >
+                      Dashboard
                     </button>
-                ) : (
+                      )}
+                      {user.role === 'admin' && (
+                        <button
+                          onClick={() => navigate('/admin/dashboard')}
+                          className="text-sm text-teal-700 hover:underline"
+                        >
+                          Admin
+                        </button>
+                      )}
+                      <button
+                        onClick={logout}
+                        className="text-sm text-gray-500 hover:text-red-500 transition-colors"
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  ) : (
+                    // existing login/signup buttons
                     <>
                     <Link to='/login' className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-teal-700 transition-colors">
                         <LogIn size={18} />

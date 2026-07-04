@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Mail, Lock, Eye, EyeOff, Building2, AlertCircle } from 'lucide-react'
+import { login } from '../../utils/auth.js'
+
 
 function LoginPage() {
   const navigate = useNavigate()
@@ -24,7 +26,7 @@ function LoginPage() {
   }
 
   // ── SUBMIT ──
-  // For now this is mock — later calls our backend API
+  {/* // For now this is mock — later calls our backend API
   async function handleLogin(e) {
     e.preventDefault()
     if (!validate()) return
@@ -46,7 +48,33 @@ function LoginPage() {
 
     setLoading(false)
   }
+    */}
 
+    async function handleLogin(e) {
+      e.preventDefault()
+      if (!validate()) return
+    
+      setLoading(true)
+      try {
+        const data = await login({ email, password })
+    
+        // Redirect based on role from real backend
+        if (data.user.role === 'admin') {
+          navigate('/admin/dashboard')
+        } else if (data.user.role === 'owner') {
+          navigate('/owner/dashboard')
+        } else {
+          navigate('/')
+        }
+      } catch (err) {
+        setErrors({
+          email: err.response?.data?.error || 'Login failed. Please try again.'
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+    
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="w-full max-w-md">

@@ -1,58 +1,62 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { MapPin, Star, Users, CheckCircle, ArrowLeft, Wifi, Car, Wind, Music, Camera, Coffee, ChevronLeft, ChevronRight, Share2, Heart } from 'lucide-react'
-
+import {
+  MapPin, Star, Users, CheckCircle, ArrowLeft,
+  Wifi, Car, Wind, Music, Camera, Coffee,
+  ChevronLeft, ChevronRight, Share2, Heart, Loader2
+} from 'lucide-react'
+import api from '../../utils/api.js'
 // ─── SAMPLE DATA ───────────────────────────────────────────
-const SAMPLE_VENUES = [
-  {
-    id: '1',
-    name: 'Kochi Convention Centre',
-    location: 'Ernakulam',
-    address: 'MG Road, Ernakulam, Kochi, Kerala 682011',
-    category: 'Banquet Hall',
-    price: 25000,
-    capacity: 500,
-    rating: 4.8,
-    reviews: 124,
-    verified: true,
-    description: 'A premium banquet hall in the heart of Kochi, perfect for weddings, corporate events, and large gatherings. Features state-of-the-art sound systems, elegant decor, and a dedicated event management team.',
-    amenities: ['WiFi', 'Parking', 'AC', 'Sound System', 'Catering', 'Photography'],
-    owner: { name: 'Suresh Kumar', phone: '+91 98765 43210' },
-    booked_dates: ['2026-06-25', '2026-06-26', '2026-07-04', '2026-07-10', '2026-07-15'],
-  },
-  {
-    id: '2',
-    name: 'Beach Pavilion Kozhikode',
-    location: 'Kozhikode',
-    address: 'Beach Road, Kozhikode, Kerala 673001',
-    category: 'Outdoor',
-    price: 18000,
-    capacity: 300,
-    rating: 4.6,
-    reviews: 89,
-    verified: false,
-    description: 'A stunning outdoor venue right on the Kozhikode beach. Ideal for sunset weddings, birthday parties, and cultural events.',
-    amenities: ['Parking', 'Sound System', 'Catering', 'Photography'],
-    owner: { name: 'Anitha Menon', phone: '+91 94567 89012' },
-    booked_dates: ['2026-06-28', '2026-07-05', '2026-07-12'],
-  },
-  {
-    id: '3',
-    name: 'Thrissur Heritage Hall',
-    location: 'Thrissur',
-    address: 'Swaraj Round, Thrissur, Kerala 680001',
-    category: 'Wedding',
-    price: 32000,
-    capacity: 800,
-    rating: 4.9,
-    reviews: 201,
-    verified: true,
-    description: 'A majestic heritage hall in the cultural capital of Kerala. With traditional Kerala architecture and modern amenities.',
-    amenities: ['WiFi', 'Parking', 'AC', 'Sound System', 'Catering', 'Photography', 'Decoration'],
-    owner: { name: 'Rajan Pillai', phone: '+91 97654 32109' },
-    booked_dates: ['2026-06-29', '2026-06-30', '2026-07-06', '2026-07-07', '2026-07-20'],
-  },
-]
+// const SAMPLE_VENUES = [
+//   {
+//     id: '1',
+//     name: 'Kochi Convention Centre',
+//     location: 'Ernakulam',
+//     address: 'MG Road, Ernakulam, Kochi, Kerala 682011',
+//     category: 'Banquet Hall',
+//     price: 25000,
+//     capacity: 500,
+//     rating: 4.8,
+//     reviews: 124,
+//     verified: true,
+//     description: 'A premium banquet hall in the heart of Kochi, perfect for weddings, corporate events, and large gatherings. Features state-of-the-art sound systems, elegant decor, and a dedicated event management team.',
+//     amenities: ['WiFi', 'Parking', 'AC', 'Sound System', 'Catering', 'Photography'],
+//     owner: { name: 'Suresh Kumar', phone: '+91 98765 43210' },
+//     booked_dates: ['2026-06-25', '2026-06-26', '2026-07-04', '2026-07-10', '2026-07-15'],
+//   },
+//   {
+//     id: '2',
+//     name: 'Beach Pavilion Kozhikode',
+//     location: 'Kozhikode',
+//     address: 'Beach Road, Kozhikode, Kerala 673001',
+//     category: 'Outdoor',
+//     price: 18000,
+//     capacity: 300,
+//     rating: 4.6,
+//     reviews: 89,
+//     verified: false,
+//     description: 'A stunning outdoor venue right on the Kozhikode beach. Ideal for sunset weddings, birthday parties, and cultural events.',
+//     amenities: ['Parking', 'Sound System', 'Catering', 'Photography'],
+//     owner: { name: 'Anitha Menon', phone: '+91 94567 89012' },
+//     booked_dates: ['2026-06-28', '2026-07-05', '2026-07-12'],
+//   },
+//   {
+//     id: '3',
+//     name: 'Thrissur Heritage Hall',
+//     location: 'Thrissur',
+//     address: 'Swaraj Round, Thrissur, Kerala 680001',
+//     category: 'Wedding',
+//     price: 32000,
+//     capacity: 800,
+//     rating: 4.9,
+//     reviews: 201,
+//     verified: true,
+//     description: 'A majestic heritage hall in the cultural capital of Kerala. With traditional Kerala architecture and modern amenities.',
+//     amenities: ['WiFi', 'Parking', 'AC', 'Sound System', 'Catering', 'Photography', 'Decoration'],
+//     owner: { name: 'Rajan Pillai', phone: '+91 97654 32109' },
+//     booked_dates: ['2026-06-29', '2026-06-30', '2026-07-06', '2026-07-07', '2026-07-20'],
+//   },
+// ]
 
 // ─── CONSTANTS ──────────
 const AMENITY_ICONS = {
@@ -75,6 +79,7 @@ const CATEGORY_EMOJIS = {
   'Studio': '📸',
 }
 
+// Pick hero color based on venue name first letter
 const HERO_COLORS = [
   'from-teal-50 to-teal-100',
   'from-amber-50 to-amber-100',
@@ -108,31 +113,66 @@ function VenueDetailPage() {
   const navigate = useNavigate()
 
   // Find venue whose id matches URL param
-  const venue = SAMPLE_VENUES.find(v => v.id === id)
+  // const venue = SAMPLE_VENUES.find(v => v.id === id)
 
   // Today's date — used to disable past dates
   const today = new Date()
   today.setHours(0, 0, 0, 0) // reset time to midnight for clean comparison
 
-  // ── STATES ──
-  const [calMonth, setCalMonth] = useState(today.getMonth())    // which month calendar shows
-  const [calYear, setCalYear]   = useState(today.getFullYear()) // which year calendar shows
-  const [selectedDates, setSelectedDates] = useState([])        // array of picked dates
-  const [liked, setLiked] = useState(false)                     // heart button toggle
+   // ── STATES ──
+  const [venue, setVenue]           = useState(null)
+  const [loading, setLoading]       = useState(true)
+  const [error, setError]           = useState(null)
+  const [calMonth, setCalMonth]     = useState(today.getMonth())
+  const [calYear, setCalYear]       = useState(today.getFullYear())
+  const [selectedDates, setSelectedDates] = useState([])
+  const [liked, setLiked]           = useState(false)               // heart button toggle
+
+  // ── FETCH VENUE FROM BACKEND ──
+  useEffect(() => {
+    async function fetchVenue() {
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await api.get(`/venues/${id}`)
+        setVenue(res.data.venue)
+      } catch (err) {
+        setError('Venue not found or unavailable.')
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchVenue()
+    }, [id])
 
   // ── VENUE NOT FOUND ──
   // If user visits /venue/999 which doesn't exist → show error screen
-  if (!venue) {
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 size={32} className="text-teal-600 animate-spin" />
+          <p className="text-sm text-gray-400">Loading venue details...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error || !venue) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-5xl mb-4">🔍</p>
           <p className="text-xl font-semibold text-gray-700 mb-2">Venue not found</p>
-          <p className="text-sm text-gray-400 mb-6">This venue may have been removed</p>
+          <p className="text-sm text-gray-400 mb-6">{error}</p>
           <button
             onClick={() => navigate('/browse')}
-            className="bg-teal-700 text-white text-sm font-medium px-6 py-3 rounded-xl">
-              Back to Browse
+            className="bg-teal-700 text-white text-sm font-medium px-6 py-3 rounded-xl"
+          >
+            Back to Browse
           </button>
         </div>
       </div>
@@ -169,8 +209,7 @@ function VenueDetailPage() {
     const dateStr = formatDate(calYear, calMonth, day)
     const clickedDate = new Date(dateStr)
     const isPast     = clickedDate < today
-    const isBooked   = venue.booked_dates.includes(dateStr)
-
+    const isBooked = venue.booked_dates.includes(dateStr)
     // Do nothing if past or already booked
     if (isPast || isBooked) return
 
@@ -201,13 +240,12 @@ function VenueDetailPage() {
       alert('Please select at least one date!')
       return
     }
-    // Sort dates and pass to booking page as URL parameter
     const datesParam = selectedDates.sort().join(',')
-    navigate(`/booking/${venue.id}?dates=${datesParam}`)
+    navigate(`/booking/${venue._id}?dates=${datesParam}`)
   }
 
   // Pick hero color based on venue id
-  const heroColor = HERO_COLORS[(Number(id) - 1) % HERO_COLORS.length]
+  const heroColor = HERO_COLORS[venue.name.charCodeAt(0) % HERO_COLORS.length]
 
   // ─── RENDER ───────────────────────────────────────────────
   return (
@@ -266,7 +304,7 @@ function VenueDetailPage() {
               </div>
               <p className="text-sm text-gray-500 flex items-center gap-1 mb-3">
                 <MapPin size={14} className="text-teal-600" />
-                {venue.address}
+                {venue.location.address}, {venue.location.city}, {venue.location.state}
               </p>
               <div className="flex items-center gap-5 text-sm">
                 <span className="flex items-center gap-1.5">
