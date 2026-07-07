@@ -13,10 +13,14 @@ router.get('/', async (req, res) => {
       maxPrice, minCapacity, page = 1, limit = 12
     } = req.query
 
-    // Build filter object dynamically
-    const filter = {
-      status: 'approved',
-      is_deleted: false
+    const filter = {}
+
+    // Admin can see all statuses
+    if (req.query.status === 'all') {
+      // no status filter — show everything
+    } else {
+      filter.status = 'approved'
+      filter.is_deleted = false
     }
 
     if (category)    filter.category = category
@@ -166,6 +170,27 @@ router.patch('/:id/approve', protect, restrictTo('admin'), async (req, res) => {
 
     res.json({ status: 'success', venue })
 
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// ── REJECT VENUE (admin only) ──
+// PATCH /api/venues/:id/reject
+router.patch('/:id/reject', protect, restrictTo('admin'), async (req, res) => {
+  try {
+    const venue = await Venue.findByIdAndUpdate(
+      req.params.id,
+      {
+        status: 'rejected',
+        'verification.status': 'rejected',
+        'verification.rejection_reason': req.body.reason,
+        'verification.reviewed_at': new Date(),
+        'verification.reviewed_by': req.user._id
+      },
+      { new: true }
+    )
+    res.json({ status: 'success', venue })
   } catch (error) {
     res.status(500).json({ error: error.message })
   }
