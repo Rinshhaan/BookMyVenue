@@ -2,11 +2,30 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Mail, Lock, Eye, EyeOff, Building2, AlertCircle } from 'lucide-react'
 import { login } from '../../utils/auth.js'
+import { useAuth } from '../../context/AuthContext.jsx'
+import { login as loginApi } from '../../utils/auth.js'
 
 
 function LoginPage() {
   const navigate = useNavigate()
+  const { login } = useAuth()
 
+  async function handleLogin(e) {
+    e.preventDefault()
+    if (!validate()) return
+    setLoading(true)
+    try {
+      const data = await loginApi({ email, password })
+      login(data.user)  // ← update global auth state
+      if (data.user.role === 'admin') navigate('/admin/dashboard')
+      else if (data.user.role === 'owner') navigate('/owner/dashboard')
+      else navigate('/')
+    } catch (err) {
+      setErrors({ email: err.response?.data?.error || 'Login failed' })
+    } finally {
+      setLoading(false)
+    }
+  }
   // ── STATES ──
   const [email, setEmail]         = useState('')
   const [password, setPassword]   = useState('')

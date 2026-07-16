@@ -5,10 +5,29 @@ import {
   User, Phone, AlertCircle, CheckCircle
 } from 'lucide-react'
 import { signup } from '../../utils/auth.js'
+import { useAuth } from '../../context/AuthContext.jsx'
+import { signup as signupApi } from '../../utils/auth.js'
 
 function SignupPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const { login } = useAuth()
+
+  async function handleSignup(e) {
+    e.preventDefault()
+    if (!validate()) return
+    setLoading(true)
+    try {
+      const data = await signupApi({ name, email, phone, password, role, businessName })
+      login(data.user)  // ← update global auth state
+      if (data.user.role === 'owner') navigate('/owner/dashboard')
+      else navigate('/')
+    } catch (err) {
+      setErrors({ email: err.response?.data?.error || 'Signup failed' })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const defaultRole = searchParams.get('role') === 'owner' ? 'owner' : 'customer'
 

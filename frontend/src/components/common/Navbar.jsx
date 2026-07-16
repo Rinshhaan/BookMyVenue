@@ -2,12 +2,14 @@ import { useState,useEffect } from 'react'
 import { Link,useNavigate,useLocation  } from 'react-router-dom'
 import { Menu , X , Building2, LogIn , UserPlus , Home, Search, LayoutDashboard } from 'lucide-react'
 import { getUser, logout } from '../../utils/auth.js'
+import { useAuth } from '../../context/AuthContext.jsx'
 
 
-function Navbar(){
-    const navigate = useNavigate()
-    const location = useLocation()
-    const [menuOpen,setMenuOpen] = useState(false)
+function Navbar() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const { user, logout } = useAuth()  // ← real auth state
 
     // Close mobile menu whenever page changes
     useEffect(() => {
@@ -16,7 +18,6 @@ function Navbar(){
 
     // We'll replace this with real auth later
     // const user = null
-    const user = getUser()
 
 
     const navLinks = [

@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MapPin, Search, Users, Calendar, Star, CheckCircle, ArrowRight } from 'lucide-react'
+import { MapPin, Search, Users, Calendar, Star, CheckCircle, ArrowRight, Loader2 } from 'lucide-react'
+import api from '../../utils/api.js'
 
 const CATEGORIES = [
   { label: 'Wedding', icon: '💍' },
@@ -12,55 +13,33 @@ const CATEGORIES = [
   { label: 'Studio', icon: '📸' },
 ]
 
-const FEATURED_VENUES = [
-  {
-    id: '1',
-    name: 'Kochi Convention Centre',
-    location: 'Ernakulam',
-    distance: '2.3 km',
-    price: '25,000',
-    rating: '4.8',
-    category: 'Banquet Hall',
-    verified: true,
-    color: 'bg-teal-50',
-    iconColor: 'text-teal-700',
-  },
-  {
-    id: '2',
-    name: 'Beach Pavilion Kozhikode',
-    location: 'Kozhikode',
-    distance: '4.1 km',
-    price: '18,000',
-    rating: '4.6',
-    category: 'Outdoor',
-    verified: false,
-    popular: true,
-    color: 'bg-amber-50',
-    iconColor: 'text-amber-700',
-  },
-  {
-    id: '3',
-    name: 'Thrissur Heritage Hall',
-    location: 'Thrissur',
-    distance: '1.8 km',
-    price: '32,000',
-    rating: '4.9',
-    category: 'Wedding',
-    verified: true,
-    color: 'bg-pink-50',
-    iconColor: 'text-pink-700',
-  },
-]
 
 function HomePage() {
   const navigate = useNavigate()
   const [activeCategory, setActiveCategory] = useState('Wedding')
   const [searchLocation, setSearchLocation] = useState('')
   const [searchGuests, setSearchGuests] = useState('')
+  const [featuredVenues, setFeaturedVenues] = useState([])
+  const [loadingVenues, setLoadingVenues] = useState(true)
 
   function handleSearch() {
     navigate(`/browse?location=${searchLocation}&guests=${searchGuests}&category=${activeCategory}`)
   }
+
+  // Fetch featured venues
+  useEffect(() => {
+    async function fetchFeatured() {
+      try {
+        const res = await api.get('/venues?limit=3')
+        setFeaturedVenues(res.data.venues || [])
+      } catch (err) {
+        console.error('Could not load featured venues', err)
+      } finally {
+        setLoadingVenues(false)
+      }
+    }
+    fetchFeatured()
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -167,46 +146,48 @@ function HomePage() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {FEATURED_VENUES.map(venue => (
-            <div
-              key={venue.id}
-              onClick={() => navigate(`/venue/${venue.id}`)}
-              className="bg-white border border-gray-100 rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-            >
-              {/* Image placeholder */}
-              <div className={`h-36 ${venue.color} flex items-center justify-center relative`}>
-                <span className="text-5xl">🏛️</span>
-                {venue.verified && (
-                  <span className="absolute top-2 right-2 bg-teal-50 text-teal-700 text-xs px-2 py-0.5 rounded-full flex items-center gap-1 font-medium">
-                    <CheckCircle size={10} /> Verified
-                  </span>
-                )}
-                {venue.popular && (
-                  <span className="absolute top-2 right-2 bg-amber-50 text-amber-700 text-xs px-2 py-0.5 rounded-full font-medium">
-                    Popular
-                  </span>
-                )}
-              </div>
-
-              {/* Info */}
-              <div className="p-4">
-                <p className="text-sm font-semibold text-gray-800 mb-1">{venue.name}</p>
-                <p className="text-xs text-gray-500 flex items-center gap-1 mb-3">
-                  <MapPin size={11} />
-                  {venue.location} · {venue.distance}
-                </p>
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-bold text-teal-700">₹{venue.price}/day</p>
-                  <p className="text-xs text-gray-500 flex items-center gap-1">
-                    <Star size={11} className="text-amber-400 fill-amber-400" />
-                    {venue.rating}
-                  </p>
-                </div>
-              </div>
+        {loadingVenues ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 size={28} className="text-teal-600 animate-spin" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {featuredVenues.map(venue => (
+              <div
+                key={venue._id}
+                onClick={() => navigate(`/venue/${venue._id}`)}
+                className="bg-white border border-gray-100 rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+              >
+          <div className="h-36 bg-gradient-to-br from-teal-50 to-teal-100 flex items-center justify-center relative">
+            <span className="text-5xl">
+              {{'Wedding':'💍','Birthday':'🎂','Banquet Hall':'🏛️','Outdoor':'🌿','Auditorium':'🎤','Cafe':'☕','Studio':'📸'}[venue.category] || '🏛️'}
+            </span>
+            {venue.verified && (
+              <span className="absolute top-2 right-2 bg-teal-50 text-teal-700 text-xs px-2 py-0.5 rounded-full flex items-center gap-1 font-medium">
+                <CheckCircle size={10} /> Verified
+              </span>
+            )}
+          </div>
+          <div className="p-4">
+            <p className="text-sm font-semibold text-gray-800 mb-1">{venue.name}</p>
+            <p className="text-xs text-gray-500 flex items-center gap-1 mb-3">
+              <MapPin size={11} />
+              {venue.location.city}, {venue.location.state}
+            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-bold text-teal-700">
+                ₹{venue.price.toLocaleString()}/day
+              </p>
+              <p className="text-xs text-gray-500 flex items-center gap-1">
+                <Star size={11} className="text-amber-400 fill-amber-400" />
+                {venue.rating}
+              </p>
             </div>
-          ))}
+          </div>
         </div>
+       ))}
+      </div>
+      )}
       </section>
 
       {/* ── NEAR ME BANNER ── */}
