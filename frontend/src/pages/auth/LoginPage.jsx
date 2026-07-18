@@ -1,99 +1,58 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Mail, Lock, Eye, EyeOff, Building2, AlertCircle } from 'lucide-react'
-import { login } from '../../utils/auth.js'
+import { login as loginAPI } from '../../utils/auth.js'
 import { useAuth } from '../../context/AuthContext.jsx'
-import { login as loginApi } from '../../utils/auth.js'
-
 
 function LoginPage() {
   const navigate = useNavigate()
   const { login } = useAuth()
 
-  async function handleLogin(e) {
-    e.preventDefault()
-    if (!validate()) return
-    setLoading(true)
-    try {
-      const data = await loginApi({ email, password })
-      login(data.user)  // ← update global auth state
-      if (data.user.role === 'admin') navigate('/admin/dashboard')
-      else if (data.user.role === 'owner') navigate('/owner/dashboard')
-      else navigate('/')
-    } catch (err) {
-      setErrors({ email: err.response?.data?.error || 'Login failed' })
-    } finally {
-      setLoading(false)
-    }
-  }
-  // ── STATES ──
-  const [email, setEmail]         = useState('')
-  const [password, setPassword]   = useState('')
+  const [email, setEmail]       = useState('')
+  const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [errors, setErrors]       = useState({})
-  const [loading, setLoading]     = useState(false)
+  const [errors, setErrors]     = useState({})
+  const [loading, setLoading]   = useState(false)
 
-  // ── VALIDATION ──
   function validate() {
     const newErrors = {}
-    if (!email.trim())    newErrors.email    = 'Email is required'
+    if (!email.trim()) newErrors.email = 'Email is required'
     else if (!email.includes('@')) newErrors.email = 'Enter a valid email'
     if (!password.trim()) newErrors.password = 'Password is required'
-    else if (password.length < 6) newErrors.password = 'Password must be at least 6 characters'
+    else if (password.length < 6) newErrors.password = 'Minimum 6 characters'
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  // ── SUBMIT ──
-  {/* // For now this is mock — later calls our backend API
   async function handleLogin(e) {
     e.preventDefault()
     if (!validate()) return
 
     setLoading(true)
+    try {
+      // Call real backend API
+      const data = await loginAPI({ email, password })
 
-    // Simulate API call — remove when backend is ready
-    await new Promise(resolve => setTimeout(resolve, 1500))
+      // Update global auth context
+      login(data.user)
 
-    // Mock role-based redirect
-    // Later: read role from JWT token returned by backend
-    if (email.includes('admin')) {
-      navigate('/admin/dashboard')
-    } else if (email.includes('owner')) {
-      navigate('/owner/dashboard')
-    } else {
-      navigate('/')
-    }
-
-    setLoading(false)
-  }
-    */}
-
-    async function handleLogin(e) {
-      e.preventDefault()
-      if (!validate()) return
-    
-      setLoading(true)
-      try {
-        const data = await login({ email, password })
-    
-        // Redirect based on role from real backend
-        if (data.user.role === 'admin') {
-          navigate('/admin/dashboard')
-        } else if (data.user.role === 'owner') {
-          navigate('/owner/dashboard')
-        } else {
-          navigate('/')
-        }
-      } catch (err) {
-        setErrors({
-          email: err.response?.data?.error || 'Login failed. Please try again.'
-        })
-      } finally {
-        setLoading(false)
+      // Redirect based on role
+      if (data.user.role === 'admin') {
+        navigate('/admin/dashboard')
+      } else if (data.user.role === 'owner') {
+        navigate('/owner/dashboard')
+      } else {
+        navigate('/')
       }
+    } catch (err) {
+      // Show exact error from backend
+      const message = err.response?.data?.error || 'Login failed. Please try again.'
+      setErrors({ email: message })
+    } finally {
+      setLoading(false)
     }
-    
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
@@ -110,7 +69,6 @@ function LoginPage() {
 
         {/* Card */}
         <div className="bg-white border border-gray-100 rounded-2xl p-8 shadow-sm">
-
           <form onSubmit={handleLogin} className="space-y-5">
 
             {/* Email */}
@@ -119,10 +77,7 @@ function LoginPage() {
                 Email address
               </label>
               <div className="relative">
-                <Mail
-                  size={16}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
-                />
+                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="email"
                   value={email}
@@ -130,8 +85,8 @@ function LoginPage() {
                   placeholder="you@example.com"
                   className={`w-full border rounded-xl pl-10 pr-4 py-3 text-sm outline-none transition-colors ${
                     errors.email
-                      ? 'border-red-300 bg-red-50 focus:border-red-400'
-                      : 'border-gray-200 focus:border-teal-400 bg-white'
+                      ? 'border-red-300 bg-red-50'
+                      : 'border-gray-200 focus:border-teal-400'
                   }`}
                 />
               </div>
@@ -145,21 +100,13 @@ function LoginPage() {
             {/* Password */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-medium text-gray-600">
-                  Password
-                </label>
-                <button
-                  type="button"
-                  className="text-xs text-teal-600 hover:underline"
-                >
+                <label className="text-xs font-medium text-gray-600">Password</label>
+                <button type="button" className="text-xs text-teal-600 hover:underline">
                   Forgot password?
                 </button>
               </div>
               <div className="relative">
-                <Lock
-                  size={16}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
-                />
+                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
@@ -167,15 +114,14 @@ function LoginPage() {
                   placeholder="Enter your password"
                   className={`w-full border rounded-xl pl-10 pr-11 py-3 text-sm outline-none transition-colors ${
                     errors.password
-                      ? 'border-red-300 bg-red-50 focus:border-red-400'
-                      : 'border-gray-200 focus:border-teal-400 bg-white'
+                      ? 'border-red-300 bg-red-50'
+                      : 'border-gray-200 focus:border-teal-400'
                   }`}
                 />
-                {/* Show/hide password toggle */}
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -194,7 +140,7 @@ function LoginPage() {
               className={`w-full py-3 rounded-xl text-sm font-semibold transition-all ${
                 loading
                   ? 'bg-teal-400 text-white cursor-not-allowed'
-                  : 'bg-teal-700 hover:bg-teal-800 text-white shadow-sm hover:shadow-md'
+                  : 'bg-teal-700 hover:bg-teal-800 text-white'
               }`}
             >
               {loading ? (
@@ -217,31 +163,23 @@ function LoginPage() {
             <div className="flex-1 h-px bg-gray-100" />
           </div>
 
-          {/* Demo accounts hint */}
+          {/* Demo hints */}
           <div className="bg-teal-50 border border-teal-100 rounded-xl p-4 mb-6">
-            <p className="text-xs font-medium text-teal-800 mb-2">
-              Demo accounts (for testing)
-            </p>
+            <p className="text-xs font-medium text-teal-800 mb-2">Demo accounts</p>
             <div className="space-y-1 text-xs text-teal-700">
-              <p>Customer → any email + any password</p>
-              <p>Owner → use email with "owner" in it</p>
-              <p>Admin → use email with "admin" in it</p>
+              <p>Customer → rinshan@test.com / test123</p>
+              <p>Owner → owner@bookmyvenue-demo.com / demo1234</p>
+              <p>Admin → admin@bookmyvenue.com / admin1234</p>
             </div>
           </div>
 
-          {/* Sign up link */}
           <p className="text-center text-sm text-gray-500">
             Don't have an account?{' '}
-            <Link
-              to="/signup"
-              className="text-teal-700 font-medium hover:underline"
-            >
+            <Link to="/signup" className="text-teal-700 font-medium hover:underline">
               Sign up free
             </Link>
           </p>
-
         </div>
-
       </div>
     </div>
   )

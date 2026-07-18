@@ -7,6 +7,8 @@ import {
 } from 'lucide-react'
 import api from '../../utils/api.js'
 import { getUser, isLoggedIn } from '../../utils/auth.js'
+import { useAuth } from '../../context/AuthContext.jsx'
+
 
 const CATEGORY_EMOJIS = {
   'Wedding': '💍', 'Birthday': '🎂', 'Banquet Hall': '🏛️',
@@ -15,19 +17,24 @@ const CATEGORY_EMOJIS = {
 
 function AdminDashboard() {
   const navigate = useNavigate()
-  const user = getUser()
+  const { user } = useAuth()
 
-  const [venues, setVenues]         = useState([])
-  const [pendingVenues, setPendingVenues] = useState([])
-  const [loading, setLoading]       = useState(true)
-  const [actionLoading, setActionLoading] = useState(null)
-  const [activeTab, setActiveTab]   = useState('pending')
-
-  // Redirect if not admin
   useEffect(() => {
-    if (!isLoggedIn()) { navigate('/login'); return }
-    if (user?.role !== 'admin') { navigate('/'); return }
-  }, [])
+    if (!user) return
+    if (user.role !== 'admin') {
+      navigate('/')
+      return
+    }
+    fetchData()
+  }, [user])
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 size={28} className="text-teal-600 animate-spin" />
+      </div>
+    )
+  }
 
   // Fetch all venues
   useEffect(() => {

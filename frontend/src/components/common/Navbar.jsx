@@ -63,9 +63,9 @@ function Navbar() {
             {user ? (
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-gray-600">
-                    Hi, {user.name.split(' ')[0]}
+                    Hi, {user?.name?.split(' ')[0] || 'there'}
                   </span>
-                  {user.role === 'owner' && (
+                  {user?.role === 'owner' && (
                     <button
                       onClick={() => navigate('/owner/dashboard')}
                       className="text-sm text-teal-700 hover:underline"
@@ -73,7 +73,7 @@ function Navbar() {
                       Dashboard
                     </button>
                       )}
-                      {user.role === 'admin' && (
+                      {user?.role === 'admin' && (
                         <button
                           onClick={() => navigate('/admin/dashboard')}
                           className="text-sm text-teal-700 hover:underline"
